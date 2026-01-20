@@ -157,6 +157,15 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        const firebaseConfig = {
+  apiKey: "AIzaSyDc5CCosH4DeOsG05uhDxPQ45XP3siyKZU",
+  authDomain: "choir-page-4e00d.firebaseapp.com",
+  projectId: "choir-page-4e00d",
+  storageBucket: "choir-page-4e00d.firebasestorage.app",
+  messagingSenderId: "245562352441",
+  appId: "1:245562352441:web:8fcea737d96e105e553ee8",
+  measurementId: "G-90V0LCQSZP"
+};
 
         const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
         const app = initializeApp(config);
