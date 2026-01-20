@@ -246,14 +246,17 @@
         function renderAll() { renderHighlight(); renderList(); }
 
         function getThisSunday() {
-    const now = new Date();
-    // 오늘 날짜를 '하루의 시작(00:00)'으로 맞춰서 시간대 영향 제거
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const day = today.getDay(); // 0: 일, 1: 월, ... 6: 토
-    const diff = day === 0 ? 0 : 7 - day; // 오늘이 일요일이면 0, 아니면 다음 일요일까지 남은 일수
-    const sunday = new Date(today);
-    sunday.setDate(today.getDate() + diff);
-    return sunday.toISOString().split('T')[0];
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // 오늘 0시로 고정
+
+  const day = today.getDay(); // 0=일, 1=월,... 6=토
+  const diff = day === 0 ? 0 : 7 - day; // 오늘이 일요일이면 0, 아니면 다음 일요일까지 남은 일수
+
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() + diff);
+  return sunday.toISOString().split('T')[0];
+}
+SOString().split('T')[0];
 }
 
 
