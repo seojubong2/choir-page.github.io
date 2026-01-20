@@ -159,14 +159,27 @@
         import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- [중요: 배포 시 아래 값을 반드시 본인의 것으로 채우세요] ---
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyDc5CCosH4DeOsG05uhDxPQ45XP3siyKZU",
+  authDomain: "choir-page-4e00d.firebaseapp.com",
+  projectId: "choir-page-4e00d",
+  storageBucket: "choir-page-4e00d.firebasestorage.app",
+  messagingSenderId: "245562352441",
+  appId: "1:245562352441:web:8fcea737d96e105e553ee8",
+  measurementId: "G-90V0LCQSZP"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
         // -----------------------------------------------------------
 
         const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
