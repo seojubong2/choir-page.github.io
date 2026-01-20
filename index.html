@@ -247,15 +247,21 @@
 
         function getThisSunday() {
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // 오늘 0시로 고정
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // 오늘 0시 (로컬)
 
   const day = today.getDay(); // 0=일, 1=월,... 6=토
   const diff = day === 0 ? 0 : 7 - day; // 오늘이 일요일이면 0, 아니면 다음 일요일까지 남은 일수
 
   const sunday = new Date(today);
   sunday.setDate(today.getDate() + diff);
-  return sunday.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+
+  const year = sunday.getFullYear();
+  const month = String(sunday.getMonth() + 1).padStart(2, '0');
+  const date = String(sunday.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${date}`; // 로컬 기준 YYYY-MM-DD
 }
+
 
 
         function renderHighlight() {
