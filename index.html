@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>샬롬 찬양대 스마트 보드</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .part-btn:active { transform: scale(0.95); }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+        .modal.active { display: flex; }
+        /* 하이라이트 카드 그라데이션 */
+        .highlight-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #f0f9ff 100%);
+            border: 1px solid #e2e8f0;
+        }
+        /* 데이트 피커 숨기기 및 아이콘 트리거 스타일 */
+        #date-picker {
+            position: absolute;
+            opacity: 0;
+            width: 40px;
+            height: 40px;
+            right: 0;
+            top: 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-700 pb-20">
+
+    <!-- Header: 차분한 뮤트 아쿠아 블루 #79A7B3 -->
+    <header class="bg-[#79A7B3] text-white pt-8 pb-16 px-6 rounded-b-[2.5rem] shadow-lg relative transition-colors duration-500">
+        <div class="max-w-md mx-auto flex justify-between items-center text-white">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight drop-shadow-md">샬롬 찬양대</h1>
+                <p class="text-white/90 text-xs mt-1 font-medium" id="current-date-display">불러오는 중...</p>
+            </div>
+            <button id="admin-toggle" class="bg-white/20 p-2 rounded-full hover:bg-white/30 transition shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 -mt-10 space-y-6">
+        
+        <!-- 이번 주 찬양 하이라이트 -->
+        <section id="this-week-highlight" class="highlight-card rounded-3xl p-6 shadow-md relative overflow-hidden border-white/50">
+            <div class="relative z-10">
+                <div class="flex items-center space-x-2 mb-2">
+                    <span class="bg-[#79A7B3] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">This Sunday</span>
+                    <span id="sunday-date-label" class="text-[#5d858f] text-xs font-bold"></span>
+                </div>
+                <h2 class="text-sm font-semibold text-slate-500 mb-1">이번 주 찬양곡</h2>
+                <div id="highlight-content">
+                    <p class="text-lg text-slate-400 italic font-medium">데이터를 불러오는 중입니다...</p>
+                </div>
+            </div>
+            <div class="absolute -right-4 -bottom-4 text-slate-400/10">
+                <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            </div>
+        </section>
+
+        <!-- 공지사항 -->
+        <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="flex items-center text-slate-800 font-bold text-sm">
+                    <svg class="mr-1.5 text-[#79A7B3]" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    공지사항
+                </h2>
+                <button onclick="openNoticeModal()" class="admin-only hidden text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded-md font-bold hover:bg-slate-200 transition">+ 추가</button>
+            </div>
+            <ul id="notice-list" class="text-sm text-slate-600 space-y-2"></ul>
+        </section>
+
+        <!-- 검색 및 탭 영역 -->
+        <div class="space-y-4">
+            <!-- 검색바 -->
+            <div class="flex items-center space-x-2">
+                <div class="relative flex-1">
+                    <input type="text" id="search-input" oninput="handleSearch()" placeholder="곡명으로 검색..." class="w-full bg-white border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-[#79A7B3]/40 outline-none transition-all shadow-sm">
+                    <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </div>
+                </div>
+                <div class="relative bg-white border border-slate-200 p-3 rounded-xl shadow-sm hover:bg-slate-50 transition-all cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#79A7B3]"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <input type="date" id="date-picker" onchange="handleDateSearch(this.value)">
+                </div>
+                <button id="clear-search" onclick="clearSearch()" class="hidden bg-slate-200 text-slate-600 p-3 rounded-xl hover:bg-slate-300 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+
+            <!-- 탭 메뉴 -->
+            <div class="flex space-x-2 bg-slate-200/50 p-1.5 rounded-2xl text-sm font-medium">
+                <button id="btn-upcoming" onclick="switchTab('upcoming')" class="flex-1 py-2.5 rounded-xl bg-white shadow-sm text-slate-700 transition-all">전체 일정</button>
+                <button id="btn-past" onclick="switchTab('past')" class="flex-1 py-2.5 rounded-xl text-slate-400 transition-all">지난 찬양</button>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center px-1 admin-only hidden transition-opacity">
+            <span class="text-[11px] text-slate-400 font-semibold tracking-wider">관리자 모드</span>
+            <button onclick="openSongModal()" class="bg-[#79A7B3] text-white text-xs px-4 py-2 rounded-xl font-bold shadow-md hover:brightness-95 transition">+ 찬양 등록</button>
+        </div>
+
+        <section id="song-list" class="space-y-4 pb-10"></section>
+
+    </main>
+
+    <!-- 모달창들 -->
+    <div id="song-modal" class="modal">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl overflow-y-auto max-h-[90vh]">
+            <h3 class="text-lg font-bold mb-4 text-slate-800">새로운 찬양 등록</h3>
+            <div class="space-y-3">
+                <input type="date" id="form-date" class="w-full border-slate-200 border rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#79A7B3]/50 outline-none">
+                <input type="text" id="form-title" class="w-full border-slate-200 border rounded-xl p-3 text-sm" placeholder="찬양 제목">
+                <input type="text" id="form-composer" class="w-full border-slate-200 border rounded-xl p-3 text-sm" placeholder="작곡/편곡가">
+                <input type="url" id="form-youtube" class="w-full border-slate-200 border rounded-xl p-3 text-sm" placeholder="YouTube 주소">
+                <textarea id="form-conductor-msg" class="w-full border-slate-200 border rounded-xl p-3 text-sm h-20 outline-none" placeholder="지휘자의 메시지"></textarea>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="url" id="form-sop" class="border rounded-xl p-2 text-xs" placeholder="소프라노">
+                    <input type="url" id="form-alt" class="border rounded-xl p-2 text-xs" placeholder="알토">
+                    <input type="url" id="form-ten" class="border rounded-xl p-2 text-xs" placeholder="테너">
+                    <input type="url" id="form-bas" class="border rounded-xl p-2 text-xs" placeholder="베이스">
+                </div>
+            </div>
+            <div class="flex space-x-3 mt-8">
+                <button onclick="closeModal('song-modal')" class="flex-1 py-3 bg-slate-50 rounded-xl font-bold text-slate-400">취소</button>
+                <button onclick="saveSong()" class="flex-1 py-3 bg-[#79A7B3] text-white rounded-xl font-bold">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notice-modal" class="modal">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 id="notice-modal-title" class="text-lg font-bold mb-4 text-slate-800">공지사항 등록</h3>
+            <textarea id="form-notice-text" class="w-full border-slate-200 border rounded-xl p-4 text-sm h-32 outline-none" placeholder="내용을 입력하세요"></textarea>
+            <div class="flex space-x-3 mt-6">
+                <button onclick="closeModal('notice-modal')" class="flex-1 py-3 bg-slate-50 rounded-xl font-bold text-slate-400">취소</button>
+                <button onclick="saveNotice()" id="notice-save-btn" class="flex-1 py-3 bg-[#79A7B3] text-white rounded-xl font-bold">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-12 text-center text-slate-300 text-[10px] font-medium tracking-widest uppercase">
+        <p>© 2026 Shalom Choir Smart Board</p>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- [중요: 배포 시 아래 값을 반드시 본인의 것으로 채우세요] ---
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        // -----------------------------------------------------------
+
+        const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : "shalom-choir-v1";
+
+        let currentTab = 'upcoming';
+        let isAdmin = false;
+        let allSongs = [];
+        let editingNoticeId = null;
+        let searchTerm = '';
+        let searchDate = '';
+
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) { console.error("Auth Error:", err); }
+        };
+
+        onAuthStateChanged(auth, (user) => { if (user) loadData(); });
+        initAuth();
+
+        function loadData() {
+            if (!auth.currentUser) return;
+            const songRef = collection(db, 'artifacts', appId, 'public', 'data', 'songs');
+            const noticeRef = collection(db, 'artifacts', appId, 'public', 'data', 'notices');
+
+            onSnapshot(noticeRef, (snapshot) => {
+                const list = document.getElementById('notice-list');
+                list.innerHTML = '';
+                snapshot.forEach(d => {
+                    const data = d.data();
+                    const li = document.createElement('li');
+                    li.className = "flex justify-between items-start group border-b border-slate-50 last:border-0 pb-2 last:pb-0";
+                    li.innerHTML = `
+                        <div class="flex-1 text-slate-600 leading-relaxed"><span class="text-[#79A7B3] mr-2 font-bold">•</span>${data.text}</div>
+                        <div class="flex items-center space-x-1 ml-2 admin-only ${isAdmin ? '' : 'hidden'}">
+                            <button onclick="editNoticeItem('${d.id}', '${data.text.replace(/'/g, "\\'").replace(/\n/g, "\\n")}')" class="text-slate-300 hover:text-[#79A7B3] transition p-1">수정</button>
+                            <button onclick="deleteItem('notices', '${d.id}')" class="text-slate-300 hover:text-red-400 transition p-1">삭제</button>
+                        </div>
+                    `;
+                    list.appendChild(li);
+                });
+            });
+
+            onSnapshot(songRef, (snapshot) => {
+                allSongs = [];
+                snapshot.forEach(d => allSongs.push({ id: d.id, ...d.data() }));
+                renderAll();
+            });
+        }
+
+        function renderAll() { renderHighlight(); renderList(); }
+        function getThisSunday() {
+            const today = new Date();
+            const diff = today.getDay() === 0 ? 0 : 7 - today.getDay();
+            const target = new Date(today);
+            target.setDate(today.getDate() + diff);
+            return target.toISOString().split('T')[0];
+        }
+
+        function renderHighlight() {
+            const highlightContainer = document.getElementById('highlight-content');
+            const sundayLabel = document.getElementById('sunday-date-label');
+            const sundayDateStr = getThisSunday();
+            sundayLabel.innerText = sundayDateStr;
+            const thisWeekSong = allSongs.find(s => s.date === sundayDateStr);
+            if (thisWeekSong) {
+                highlightContainer.innerHTML = `
+                    <h3 class="text-2xl font-bold mb-3 text-slate-800">${thisWeekSong.title}</h3>
+                    <div class="flex flex-wrap gap-2">
+                        ${thisWeekSong.youtube ? `<a href="${thisWeekSong.youtube}" target="_blank" class="bg-slate-800 text-white px-4 py-1.5 rounded-full text-xs font-bold transition shadow-sm hover:bg-slate-700">영상 보기</a>` : ''}
+                        <button onclick="scrollToSong('${thisWeekSong.id}')" class="bg-slate-200 hover:bg-slate-300 px-4 py-1.5 rounded-full text-xs text-slate-700 font-bold transition">연습 음원</button>
+                    </div>`;
+            } else { highlightContainer.innerHTML = `<p class="text-slate-400 text-sm italic font-medium">이번 주 찬양이 등록되지 않았습니다.</p>`; }
+        }
+
+        window.handleSearch = () => { searchTerm = document.getElementById('search-input').value.toLowerCase(); updateClear(); renderList(); };
+        window.handleDateSearch = (d) => { searchDate = d; updateClear(); renderList(); };
+        window.clearSearch = () => { searchTerm = ''; searchDate = ''; document.getElementById('search-input').value = ''; document.getElementById('date-picker').value = ''; updateClear(); renderList(); };
+        function updateClear() { (searchTerm || searchDate) ? document.getElementById('clear-search').classList.remove('hidden') : document.getElementById('clear-search').classList.add('hidden'); }
+
+        function renderList() {
+            const container = document.getElementById('song-list');
+            const today = new Date(); today.setHours(0,0,0,0);
+            let filtered = allSongs.filter(s => {
+                const sDate = new Date(s.date);
+                return currentTab === 'upcoming' ? sDate >= today : sDate < today;
+            });
+            if (searchTerm) filtered = filtered.filter(s => s.title.toLowerCase().includes(searchTerm));
+            if (searchDate) filtered = filtered.filter(s => s.date === searchDate);
+            filtered.sort((a,b) => new Date(a.date) - new Date(b.date));
+            if (currentTab === 'past') filtered.reverse();
+            container.innerHTML = filtered.length ? '' : '<p class="text-center py-20 text-slate-300">곡이 없습니다.</p>';
+            filtered.forEach(song => {
+                const isThisSunday = song.date === getThisSunday();
+                const card = document.createElement('div');
+                card.id = `song-${song.id}`;
+                card.className = `bg-white rounded-3xl p-5 shadow-sm border ${isThisSunday ? 'border-sky-100 ring-4 ring-slate-100' : 'border-slate-100'} relative mb-4 transition-all`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isThisSunday ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-400'}">${song.date}</span>
+                            <h3 class="text-lg font-bold text-slate-800">${song.title}</h3>
+                        </div>
+                        <div class="admin-only ${isAdmin ? '' : 'hidden'} flex space-x-2">
+                            <button onclick="deleteItem('songs', '${song.id}')" class="text-xs text-red-300 hover:text-red-500">삭제</button>
+                        </div>
+                    </div>
+                    ${song.conductorMsg ? `<div class="mb-4 bg-slate-50 p-3 rounded-2xl text-xs text-slate-600 leading-relaxed border border-slate-100">${song.conductorMsg}</div>` : ''}
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="openLink('${song.parts?.soprano}')" class="part-btn py-2.5 text-xs font-bold rounded-xl bg-pink-50 text-pink-400 border border-pink-100/50">SOPRANO</button>
+                        <button onclick="openLink('${song.parts?.alto}')" class="part-btn py-2.5 text-xs font-bold rounded-xl bg-amber-50 text-amber-500 border border-amber-100/50">ALTO</button>
+                        <button onclick="openLink('${song.parts?.tenor}')" class="part-btn py-2.5 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-500 border border-emerald-100/50">TENOR</button>
+                        <button onclick="openLink('${song.parts?.bass}')" class="part-btn py-2.5 text-xs font-bold rounded-xl bg-sky-50 text-sky-500 border border-sky-100/50">BASS</button>
+                    </div>`;
+                container.appendChild(card);
+            });
+        }
+
+        window.switchTab = (t) => {
+            currentTab = t;
+            document.getElementById('btn-upcoming').className = t === 'upcoming' ? "flex-1 py-2.5 rounded-xl bg-white shadow-sm text-slate-700" : "flex-1 py-2.5 rounded-xl text-slate-400";
+            document.getElementById('btn-past').className = t === 'past' ? "flex-1 py-2.5 rounded-xl bg-white shadow-sm text-slate-700" : "flex-1 py-2.5 rounded-xl text-slate-400";
+            renderList();
+        };
+
+        window.saveSong = async () => {
+            const data = { date: document.getElementById('form-date').value, title: document.getElementById('form-title').value, composer: document.getElementById('form-composer').value, youtube: document.getElementById('form-youtube').value, conductorMsg: document.getElementById('form-conductor-msg').value, parts: { soprano: document.getElementById('form-sop').value, alto: document.getElementById('form-alt').value, tenor: document.getElementById('form-ten').value, bass: document.getElementById('form-bas').value } };
+            if (!data.date || !data.title) { alert("날짜와 제목을 입력하세요."); return; }
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'songs'), data);
+            closeModal('song-modal');
+        };
+
+        window.saveNotice = async () => {
+            const text = document.getElementById('form-notice-text').value;
+            if (!text) return;
+            if (editingNoticeId) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'notices', editingNoticeId), { text });
+            else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'notices'), { text, createdAt: Date.now() });
+            closeModal('notice-modal');
+        };
+
+        window.deleteItem = async (c, i) => { if (confirm("삭제하시겠습니까?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', c, i)); };
+        window.editNoticeItem = (i, t) => { editingNoticeId = i; document.getElementById('form-notice-text').value = t; document.getElementById('notice-modal').classList.add('active'); };
+        window.openLink = (u) => { if(u && u !== '#') window.open(u); else alert("등록된 링크가 없습니다."); };
+        window.openSongModal = () => document.getElementById('song-modal').classList.add('active');
+        window.openNoticeModal = () => { editingNoticeId = null; document.getElementById('form-notice-text').value = ''; document.getElementById('notice-modal').classList.add('active'); };
+        window.closeModal = (id) => document.getElementById(id).classList.remove('active');
+        window.scrollToSong = (id) => { const el = document.getElementById(`song-${id}`); if(el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+        document.getElementById('admin-toggle').onclick = () => { isAdmin = !isAdmin; document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin)); renderAll(); };
+        document.getElementById('current-date-display').innerText = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+    </script>
+</body>
+</html>
