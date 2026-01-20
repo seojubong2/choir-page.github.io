@@ -254,8 +254,9 @@
 
   const sunday = new Date(today);
   sunday.setDate(today.getDate() + diff);
-  return sunday.toISOString().split('T')[0];
+  return sunday.toISOString().split('T')[0]; // YYYY-MM-DD 형식
 }
+
 
         function renderHighlight() {
             const highlightContainer = document.getElementById('highlight-content');
