@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>샬롬 찬양대 스마트 보드</title>
+
+    <!-- ===== PWA(홈 화면 앱) 설정 ===== -->
+    <meta name="theme-color" content="#79A7B3">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="샬롬 찬양대">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <!-- ===== PWA 설정 끝 ===== -->
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -31,6 +43,9 @@
             top: 0;
             cursor: pointer;
         }
+        /* 홈 화면 추가 안내 배너 */
+        #install-banner { display: none; }
+        #install-banner.show { display: block; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-700 pb-20">
@@ -49,7 +64,7 @@
     </header>
 
     <main class="max-w-md mx-auto px-4 -mt-10 space-y-6">
-        
+
         <!-- 최상단: 이번 주 주일 찬양 하이라이트 -->
         <section id="this-week-highlight" class="highlight-card rounded-3xl p-6 shadow-md relative overflow-hidden border-white/50">
             <div class="relative z-10">
@@ -128,7 +143,7 @@
                 <input type="text" id="form-title" class="w-full border-slate-200 border rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#79A7B3]/50 outline-none" placeholder="찬양 제목">
                 <input type="text" id="form-composer" class="w-full border-slate-200 border rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#79A7B3]/50 outline-none" placeholder="작곡/편곡가">
                 <input type="url" id="form-youtube" class="w-full border-slate-200 border rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#79A7B3]/50 outline-none" placeholder="YouTube 전체 곡 링크 (URL)">
-                
+
                 <textarea id="form-conductor-msg" class="w-full border-slate-200 border rounded-xl p-3 text-sm h-20 outline-none focus:ring-2 focus:ring-[#79A7B3]/50" placeholder="지휘자의 메시지 (예: 테너는 이 부분 열심히 들어주세요!)"></textarea>
 
                 <div class="pt-2">
@@ -160,10 +175,81 @@
         </div>
     </div>
 
+    <!-- 홈 화면 추가 안내 배너 (앱으로 설치하지 않은 경우에만 표시) -->
+    <div id="install-banner" class="fixed bottom-4 left-4 right-4 z-50">
+        <div class="max-w-md mx-auto bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 flex items-start space-x-3">
+            <img src="/icons/icon-192.png" alt="" class="w-11 h-11 rounded-xl flex-shrink-0">
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold text-slate-800">앱처럼 홈 화면에 추가하세요</p>
+                <p id="install-text" class="text-[11px] text-slate-500 mt-1 leading-relaxed"></p>
+                <button id="install-btn" class="hidden mt-2 bg-[#79A7B3] text-white text-xs px-4 py-2 rounded-xl font-bold shadow-sm hover:brightness-95 transition">홈 화면에 설치</button>
+            </div>
+            <button id="install-close" aria-label="닫기" class="text-slate-300 hover:text-slate-500 p-1 -mt-1 -mr-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="mt-12 text-center text-slate-300 text-[10px] font-medium tracking-widest uppercase">
         <p>© 2026 Shalom Choir Smart Board</p>
     </footer>
+
+    <!-- PWA: 서비스 워커 등록 + 홈 화면 추가 안내 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('SW 등록 실패:', e));
+            });
+        }
+
+        (function () {
+            const banner = document.getElementById('install-banner');
+            const text = document.getElementById('install-text');
+            const btn = document.getElementById('install-btn');
+            const KEY = 'shalom-install-dismissed';
+
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            const ua = navigator.userAgent;
+            const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const isMobile = isIOS || /Android/i.test(ua);
+
+            let dismissed = false;
+            try { dismissed = localStorage.getItem(KEY) === '1'; } catch (e) {}
+
+            if (isStandalone || dismissed || !isMobile) return;
+
+            document.getElementById('install-close').onclick = () => {
+                banner.classList.remove('show');
+                try { localStorage.setItem(KEY, '1'); } catch (e) {}
+            };
+
+            if (isIOS) {
+                // 아이폰/아이패드: 자동 설치 팝업이 없으므로 방법을 안내
+                text.innerHTML = '하단의 <b>공유 버튼</b>(네모에 위쪽 화살표)을 누른 뒤 <b>"홈 화면에 추가"</b>를 선택하세요.';
+                banner.classList.add('show');
+                return;
+            }
+
+            // 안드로이드: 설치 버튼 제공
+            let deferredPrompt = null;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                text.textContent = '아래 버튼을 누르면 홈 화면에 앱 아이콘이 생겨요.';
+                btn.classList.remove('hidden');
+                banner.classList.add('show');
+            });
+            btn.onclick = async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                banner.classList.remove('show');
+            };
+            window.addEventListener('appinstalled', () => banner.classList.remove('show'));
+        })();
+    </script>
 
     <!-- Firebase SDK -->
     <script type="module">
@@ -295,9 +381,9 @@
             if (searchDate) filtered = filtered.filter(s => s.date === searchDate);
             filtered.sort((a,b) => new Date(a.date) - new Date(b.date));
             if (currentTab === 'past') filtered.reverse();
-            
+
             container.innerHTML = filtered.length ? '' : '<p class="text-center py-20 text-slate-300 font-medium">항목이 없습니다.</p>';
-            
+
             filtered.forEach(song => {
                 const isThisSunday = song.date === getThisSunday();
                 const card = document.createElement('div');
@@ -318,7 +404,7 @@
                     </div>
 
                     ${song.conductorMsg ? `<div class="mb-4 bg-slate-50 p-3 rounded-2xl text-[11px] text-slate-600 leading-relaxed border border-slate-100 italic">" ${song.conductorMsg} "</div>` : ''}
-                    
+
                     <!-- 전체 곡 듣기 버튼 (크기 축소 및 색상 변경) -->
                     ${song.youtube ? `
                     <button onclick="window.open('${song.youtube}')" class="w-full mb-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1.5 shadow-sm hover:bg-slate-200 transition border border-slate-200">
@@ -353,24 +439,24 @@
         }
 
         window.saveSong = async () => {
-            const data = { 
-                date: document.getElementById('form-date').value, 
-                title: document.getElementById('form-title').value, 
-                composer: document.getElementById('form-composer').value, 
-                youtube: document.getElementById('form-youtube').value, 
-                conductorMsg: document.getElementById('form-conductor-msg').value, 
-                parts: { 
-                    soprano: document.getElementById('form-sop').value, 
-                    alto: document.getElementById('form-alt').value, 
-                    tenor: document.getElementById('form-ten').value, 
-                    bass: document.getElementById('form-bas').value 
-                } 
+            const data = {
+                date: document.getElementById('form-date').value,
+                title: document.getElementById('form-title').value,
+                composer: document.getElementById('form-composer').value,
+                youtube: document.getElementById('form-youtube').value,
+                conductorMsg: document.getElementById('form-conductor-msg').value,
+                parts: {
+                    soprano: document.getElementById('form-sop').value,
+                    alto: document.getElementById('form-alt').value,
+                    tenor: document.getElementById('form-ten').value,
+                    bass: document.getElementById('form-bas').value
+                }
             };
             if (!data.date || !data.title) { alert("날짜와 제목을 입력하세요."); return; }
-            
+
             if (editingSongId) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'songs', editingSongId), data);
             else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'songs'), data);
-            
+
             closeModal('song-modal');
             clearSongForm();
         };
@@ -384,12 +470,12 @@
         };
 
         window.deleteItem = async (c, i) => { if (confirm("정말 삭제하시겠습니까?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', c, i)); };
-        
-        window.editNoticeItem = (id, text) => { 
-            editingNoticeId = id; 
+
+        window.editNoticeItem = (id, text) => {
+            editingNoticeId = id;
             document.getElementById('notice-modal-title').innerText = "공지사항 수정";
-            document.getElementById('form-notice-text').value = text; 
-            document.getElementById('notice-modal').classList.add('active'); 
+            document.getElementById('form-notice-text').value = text;
+            document.getElementById('notice-modal').classList.add('active');
         };
 
         window.editSongItem = (id) => {
